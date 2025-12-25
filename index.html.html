@@ -141,6 +141,26 @@
             // Add or edit any state here, e.g. "Florida": "Custom detail text"
         };
 
+        const LOCAL_KEY = "state-tooltip-details";
+
+        const loadSavedDetails = () => {
+            try {
+                const raw = localStorage.getItem(LOCAL_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch (err) {
+                console.warn("Could not load saved details", err);
+                return {};
+            }
+        };
+
+        const saveDetails = () => {
+            try {
+                localStorage.setItem(LOCAL_KEY, JSON.stringify(tooltipDetails));
+            } catch (err) {
+                console.warn("Could not save details", err);
+            }
+        };
+
         const statusByColor = {
             "#ac0000": "Illegal",
             "#008c5c": "Legal",
@@ -154,6 +174,9 @@
             const map = document.getElementById("tile-map");
 
             if (!tooltip || !map) return;
+
+            // Merge any saved edits from localStorage.
+            Object.assign(tooltipDetails, loadSavedDetails());
 
             const showTooltip = (event) => {
                 const path = event.currentTarget;
@@ -192,6 +215,17 @@
                 path.addEventListener("mouseenter", showTooltip);
                 path.addEventListener("mousemove", positionTooltip);
                 path.addEventListener("mouseleave", hideTooltip);
+
+                // Allow adding/updating info on click.
+                path.addEventListener("click", () => {
+                    const stateName = path.getAttribute("data-state-name") || "Unknown";
+                    const current = tooltipDetails[stateName] || "";
+                    const input = prompt(`Enter info for ${stateName}:`, current);
+                    if (input === null) return; // cancelled
+                    const next = input.trim() || "No info provided.";
+                    tooltipDetails[stateName] = next;
+                    saveDetails();
+                });
             });
         });
     </script>
